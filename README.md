@@ -1,6 +1,6 @@
 # AnkiAnki
 
-A modern full-stack web application built with Next.js 15, featuring TypeScript, Tailwind CSS, Prisma ORM, and shadcn/ui components.
+A modern full-stack web application built with Next.js 15, featuring TypeScript, Tailwind CSS, Prisma ORM, shadcn/ui components, and Google OAuth authentication.
 
 ## 🚀 Features
 
@@ -9,6 +9,7 @@ A modern full-stack web application built with Next.js 15, featuring TypeScript,
 - **Tailwind CSS** - Utility-first CSS framework
 - **Prisma** - Type-safe database ORM
 - **shadcn/ui** - Beautiful, accessible UI components
+- **NextAuth.js** - OAuth authentication with Google
 - **ESLint** - Code linting and formatting
 - **SQLite** - Lightweight database for development
 
@@ -27,8 +28,12 @@ npm install
 
 3. Set up the database:
 ```bash
-# Create .env file with SQLite configuration
-echo 'DATABASE_URL="file:./dev.db"' > .env
+# Create .env.local file with required configuration
+echo 'DATABASE_URL="file:./dev.db"' > .env.local
+echo 'NEXTAUTH_URL="http://localhost:3000"' >> .env.local
+echo 'NEXTAUTH_SECRET="your-nextauth-secret-key-here"' >> .env.local
+echo 'GOOGLE_CLIENT_ID="your-google-client-id-here"' >> .env.local
+echo 'GOOGLE_CLIENT_SECRET="your-google-client-secret-here"' >> .env.local
 
 # Push the database schema
 npx prisma db push
@@ -37,29 +42,66 @@ npx prisma db push
 npx prisma generate
 ```
 
-4. Start the development server:
+4. Set up Google OAuth:
+   - Go to [Google Cloud Console](https://console.cloud.google.com/)
+   - Create a new project or select an existing one
+   - Enable the Google+ API
+   - Go to "Credentials" and create an OAuth 2.0 Client ID
+   - Set the authorized redirect URI to `http://localhost:3000/api/auth/callback/google`
+   - Copy the Client ID and Client Secret to your `.env.local` file
+
+5. Start the development server:
 ```bash
 npm run dev
 ```
 
-5. Open [http://localhost:3000](http://localhost:3000) in your browser.
+6. Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## 🔐 Authentication
+
+This project includes Google OAuth authentication with the following features:
+
+- **Protected Routes** - The demo page requires authentication
+- **User Profile** - Display user name/email with avatar in the top right
+- **Logout Functionality** - Users can sign out via the profile dropdown
+- **Error Handling** - Dedicated error pages for authentication failures
+- **User Preferences** - Database schema includes theme preferences
+
+### Authentication Flow
+
+1. Users visit `/demo` and are redirected to `/auth/signin` if not authenticated
+2. Users can sign in with their Google account
+3. Upon successful authentication, users are redirected to `/demo`
+4. If authentication fails, users are redirected to `/auth/error`
+5. Users can logout via the profile dropdown in the top right
 
 ## 🏗️ Project Structure
 
 ```
 src/
 ├── app/                    # Next.js App Router
-│   ├── demo/              # Demo page showcasing all features
+│   ├── auth/              # Authentication pages
+│   │   ├── signin/        # Sign-in page
+│   │   └── error/         # Auth error page
+│   ├── demo/              # Protected demo page
+│   ├── unauthorized/      # Unauthorized access page
+│   ├── api/auth/          # NextAuth API routes
 │   ├── globals.css        # Global styles with Tailwind
-│   ├── layout.tsx         # Root layout
+│   ├── layout.tsx         # Root layout with SessionProvider
 │   └── page.tsx           # Home page
 ├── components/            # React components
+│   ├── auth/              # Authentication components
+│   │   ├── auth-guard.tsx # Route protection component
+│   │   └── user-profile.tsx # User profile dropdown
+│   ├── providers/         # Context providers
+│   │   └── session-provider.tsx # NextAuth SessionProvider
 │   └── ui/               # shadcn/ui components
 ├── lib/                  # Utility functions
+│   ├── auth.ts           # NextAuth configuration
 │   ├── prisma.ts         # Prisma client configuration
 │   └── utils.ts          # General utilities
 prisma/
-├── schema.prisma         # Database schema
+├── schema.prisma         # Database schema with OAuth tables
 └── dev.db               # SQLite database (created after setup)
 ```
 
@@ -71,6 +113,8 @@ This project includes shadcn/ui components:
 - Input
 - Label
 - Form
+- DropdownMenu
+- Avatar
 
 To add more components:
 ```bash
@@ -79,12 +123,11 @@ npx shadcn@latest add <component-name>
 
 ## 🗄️ Database
 
-The project includes a sample `User` model with:
-- `id` (String, unique)
-- `email` (String, unique)
-- `name` (String, optional)
-- `createdAt` (DateTime)
-- `updatedAt` (DateTime)
+The project includes OAuth-ready database schema with:
+- **User** model with OAuth fields
+- **Account** model for OAuth provider accounts
+- **Session** model for user sessions
+- **VerificationToken** model for email verification
 
 ### Database Commands
 
@@ -110,18 +153,28 @@ npx prisma generate
 
 ### Environment Variables
 
-Create a `.env` file in the root directory:
+Create a `.env.local` file in the root directory:
 ```env
+# Database
 DATABASE_URL="file:./dev.db"
+
+# NextAuth
+NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_SECRET="your-nextauth-secret-key-here"
+
+# Google OAuth
+GOOGLE_CLIENT_ID="your-google-client-id-here"
+GOOGLE_CLIENT_SECRET="your-google-client-secret-here"
 ```
 
 ## 🎯 Demo
 
-Visit `/demo` to see a comprehensive showcase of all integrated technologies.
+Visit `/demo` to see a comprehensive showcase of all integrated technologies. This page is protected and requires Google OAuth authentication.
 
 ## 📚 Learn More
 
 - [Next.js Documentation](https://nextjs.org/docs)
+- [NextAuth.js Documentation](https://next-auth.js.org/)
 - [Tailwind CSS Documentation](https://tailwindcss.com/docs)
 - [Prisma Documentation](https://www.prisma.io/docs)
 - [shadcn/ui Documentation](https://ui.shadcn.com)

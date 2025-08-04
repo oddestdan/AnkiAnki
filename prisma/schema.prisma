@@ -52,6 +52,33 @@ model User {
 
   accounts Account[]
   sessions Session[]
+  decks    Deck[]
+}
+
+model Deck {
+  id          String     @id @default(cuid())
+  name        String
+  description String?
+  cardCount   Int        @default(0)
+  lastStudied DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  userId      String
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cards       FlashCard[]
+}
+
+model FlashCard {
+  id           String   @id @default(cuid())
+  front        String
+  back         String
+  difficulty   String   @default("medium") // "easy", "medium", "hard"
+  reviewCount  Int      @default(0)
+  lastReviewed DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  deckId       String
+  deck         Deck     @relation(fields: [deckId], references: [id], onDelete: Cascade)
 }
 
 model VerificationToken {

@@ -61,7 +61,7 @@ npm run dev
 
 This project includes Google OAuth authentication with the following features:
 
-- **Protected Routes** - The demo page requires authentication
+- **Protected Routes** - The home page `/` requires authentication
 - **User Profile** - Display user name/email with avatar in the top right
 - **Logout Functionality** - Users can sign out via the profile dropdown
 - **Error Handling** - Dedicated error pages for authentication failures
@@ -69,9 +69,9 @@ This project includes Google OAuth authentication with the following features:
 
 ### Authentication Flow
 
-1. Users visit `/demo` and are redirected to `/auth/signin` if not authenticated
+1. Users visit `/` and are redirected to `/auth/signin` if not authenticated
 2. Users can sign in with their Google account
-3. Upon successful authentication, users are redirected to `/demo`
+3. Upon successful authentication, users are redirected to `/`
 4. If authentication fails, users are redirected to `/auth/error`
 5. Users can logout via the profile dropdown in the top right
 
@@ -83,12 +83,11 @@ src/
 │   ├── auth/              # Authentication pages
 │   │   ├── signin/        # Sign-in page
 │   │   └── error/         # Auth error page
-│   ├── demo/              # Protected demo page
 │   ├── unauthorized/      # Unauthorized access page
 │   ├── api/auth/          # NextAuth API routes
 │   ├── globals.css        # Global styles with Tailwind
 │   ├── layout.tsx         # Root layout with SessionProvider
-│   └── page.tsx           # Home page
+│   └── page.tsx           # Home page (protected)
 ├── components/            # React components
 │   ├── auth/              # Authentication components
 │   │   ├── auth-guard.tsx # Route protection component
@@ -166,10 +165,6 @@ NEXTAUTH_SECRET="your-nextauth-secret-key-here"
 GOOGLE_CLIENT_ID="your-google-client-id-here"
 GOOGLE_CLIENT_SECRET="your-google-client-secret-here"
 ```
-
-## 🎯 Demo
-
-Visit `/demo` to see a comprehensive showcase of all integrated technologies. This page is protected and requires Google OAuth authentication.
 
 ## 📚 Learn More
 

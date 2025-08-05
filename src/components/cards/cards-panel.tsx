@@ -5,15 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, RotateCcw, Eye, EyeOff, Check, X, ArrowLeft, ArrowRight } from "lucide-react";
+import { Plus, RotateCcw, Eye, EyeOff, Check, X, ArrowLeft, ArrowRight, Loader2, Edit, Trash2 } from "lucide-react";
 import { useApp } from "@/components/providers/app-provider";
+import { useCards, FlashCard } from "@/hooks/use-cards";
 
 export function CardsPanel() {
   const { 
     selectedDeck, 
-    decks, 
-    cards, 
-    setCards, 
     currentCardIndex, 
     setCurrentCardIndex, 
     isStudying, 
@@ -21,12 +19,23 @@ export function CardsPanel() {
     setContext 
   } = useApp();
 
+  const { 
+    cards, 
+    loading, 
+    error, 
+    createCard, 
+    updateCard, 
+    deleteCard 
+  } = useCards(selectedDeck || undefined);
+
   const [isFlipped, setIsFlipped] = useState(false);
   const [isAddingCard, setIsAddingCard] = useState(false);
+  const [editingCard, setEditingCard] = useState<string | null>(null);
   const [newCardFront, setNewCardFront] = useState("");
   const [newCardBack, setNewCardBack] = useState("");
+  const [newCardDifficulty, setNewCardDifficulty] = useState<"easy" | "medium" | "hard">("medium");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const selectedDeckData = decks.find(deck => deck.id === selectedDeck);
   const currentCard = cards[currentCardIndex];
 
   const handleFlip = () => {
@@ -62,11 +71,9 @@ export function CardsPanel() {
 
   const handleDifficultyRating = (difficulty: "easy" | "medium" | "hard") => {
     // Update card difficulty and move to next card
-    setCards(cards.map((card, index) => 
-      index === currentCardIndex 
-        ? { ...card, difficulty, reviewCount: card.reviewCount + 1, lastReviewed: new Date() }
-        : card
-    ));
+    if (currentCard && selectedDeck) {
+      updateCard(selectedDeck, currentCard.id, currentCard.front, currentCard.back, difficulty);
+    }
     
     if (currentCardIndex < cards.length - 1) {
       setCurrentCardIndex(currentCardIndex + 1);
@@ -78,19 +85,49 @@ export function CardsPanel() {
     }
   };
 
-  const handleAddCard = () => {
-    if (newCardFront.trim() && newCardBack.trim()) {
-      const newCard = {
-        id: Date.now().toString(),
-        front: newCardFront,
-        back: newCardBack,
-        difficulty: "medium" as const,
-        reviewCount: 0,
-      };
-      setCards([...cards, newCard]);
-      setNewCardFront("");
-      setNewCardBack("");
-      setIsAddingCard(false);
+  const handleAddCard = async () => {
+    if (newCardFront.trim() && newCardBack.trim() && selectedDeck && !isSubmitting) {
+      setIsSubmitting(true);
+      const success = await createCard(selectedDeck, newCardFront, newCardBack, newCardDifficulty);
+      if (success) {
+        setNewCardFront("");
+        setNewCardBack("");
+        setNewCardDifficulty("medium");
+        setIsAddingCard(false);
+      }
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleEditCard = (cardId: string) => {
+    const card = cards.find(c => c.id === cardId);
+    if (card) {
+      setNewCardFront(card.front);
+      setNewCardBack(card.back);
+      setNewCardDifficulty(card.difficulty);
+      setEditingCard(cardId);
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    if (editingCard && newCardFront.trim() && newCardBack.trim() && selectedDeck && !isSubmitting) {
+      setIsSubmitting(true);
+      const success = await updateCard(selectedDeck, editingCard, newCardFront, newCardBack, newCardDifficulty);
+      if (success) {
+        setNewCardFront("");
+        setNewCardBack("");
+        setNewCardDifficulty("medium");
+        setEditingCard(null);
+      }
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteCard = async (cardId: string) => {
+    if (selectedDeck && !isSubmitting) {
+      setIsSubmitting(true);
+      await deleteCard(selectedDeck, cardId);
+      setIsSubmitting(false);
     }
   };
 
@@ -111,18 +148,19 @@ export function CardsPanel() {
       <div className="p-6 border-b border-border">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-2xl font-bold">{selectedDeckData?.name}</h1>
+            <h1 className="text-2xl font-bold">Selected Deck</h1>
             <p className="text-muted-foreground">{cards.length} cards</p>
           </div>
           <div className="flex gap-2">
             {!isStudying ? (
               <>
-                <Button onClick={handleStartStudy}>
+                <Button onClick={handleStartStudy} disabled={loading || cards.length === 0}>
                   Start Study Session
                 </Button>
                 <Button
                   variant="outline"
                   onClick={() => setIsAddingCard(true)}
+                  disabled={loading}
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Add Card
@@ -136,8 +174,15 @@ export function CardsPanel() {
           </div>
         </div>
 
-        {/* Add Card Form */}
-        {isAddingCard && (
+        {/* Error Display */}
+        {error && (
+          <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+            <p className="text-sm text-destructive">{error}</p>
+          </div>
+        )}
+
+        {/* Add/Edit Card Form */}
+        {(isAddingCard || editingCard) && (
           <Card className="mb-4">
             <CardContent className="p-4">
               <div className="space-y-3">
@@ -149,6 +194,7 @@ export function CardsPanel() {
                     onChange={(e) => setNewCardFront(e.target.value)}
                     placeholder="Enter card front"
                     className="mt-1"
+                    disabled={isSubmitting}
                   />
                 </div>
                 <div>
@@ -159,20 +205,46 @@ export function CardsPanel() {
                     onChange={(e) => setNewCardBack(e.target.value)}
                     placeholder="Enter card back"
                     className="mt-1"
+                    disabled={isSubmitting}
                   />
                 </div>
+                <div>
+                  <Label htmlFor="card-difficulty">Difficulty</Label>
+                  <select
+                    id="card-difficulty"
+                    value={newCardDifficulty}
+                    onChange={(e) => setNewCardDifficulty(e.target.value as "easy" | "medium" | "hard")}
+                    className="w-full p-2 border rounded mt-1"
+                    disabled={isSubmitting}
+                  >
+                    <option value="easy">Easy</option>
+                    <option value="medium">Medium</option>
+                    <option value="hard">Hard</option>
+                  </select>
+                </div>
                 <div className="flex gap-2">
-                  <Button size="sm" onClick={handleAddCard}>
-                    Add Card
+                  <Button 
+                    size="sm" 
+                    onClick={isAddingCard ? handleAddCard : handleSaveEdit}
+                    disabled={isSubmitting || !newCardFront.trim() || !newCardBack.trim()}
+                  >
+                    {isSubmitting ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      isAddingCard ? "Add Card" : "Save Changes"
+                    )}
                   </Button>
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => {
                       setIsAddingCard(false);
+                      setEditingCard(null);
                       setNewCardFront("");
                       setNewCardBack("");
+                      setNewCardDifficulty("medium");
                     }}
+                    disabled={isSubmitting}
                   >
                     Cancel
                   </Button>
@@ -185,7 +257,12 @@ export function CardsPanel() {
 
       {/* Main Content */}
       <div className="flex-1 flex items-center justify-center p-6">
-        {cards.length === 0 ? (
+        {loading ? (
+          <div className="text-center text-muted-foreground">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+            <p>Loading cards...</p>
+          </div>
+        ) : cards.length === 0 ? (
           <div className="text-center text-muted-foreground">
             <p className="text-lg mb-2">No cards in this deck</p>
             <p>Add some cards to get started</p>
@@ -193,7 +270,7 @@ export function CardsPanel() {
         ) : (
           <div className="w-full max-w-2xl">
             {/* Card Display */}
-            <Card className="mb-6">
+            <Card className="mb-6 relative group">
               <CardContent className="p-8">
                 <div className="text-center">
                   <div className="mb-4 text-sm text-muted-foreground">
@@ -204,14 +281,36 @@ export function CardsPanel() {
                       {isFlipped ? currentCard.back : currentCard.front}
                     </p>
                   </div>
-                  <Button
-                    variant="outline"
-                    onClick={handleFlip}
-                    className="mt-4"
-                  >
-                    {isFlipped ? <EyeOff className="h-4 w-4 mr-2" /> : <Eye className="h-4 w-4 mr-2" />}
-                    {isFlipped ? "Show Front" : "Show Answer"}
-                  </Button>
+                  <div className="flex justify-center gap-2 mt-4">
+                    <Button
+                      variant="outline"
+                      onClick={handleFlip}
+                    >
+                      {isFlipped ? <EyeOff className="h-4 w-4 mr-2" /> : <Eye className="h-4 w-4 mr-2" />}
+                      {isFlipped ? "Show Front" : "Show Answer"}
+                    </Button>
+                    {!isStudying && (
+                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleEditCard(currentCard.id)}
+                          disabled={isSubmitting}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => handleDeleteCard(currentCard.id)}
+                          disabled={isSubmitting}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -273,7 +372,7 @@ export function CardsPanel() {
               {currentCard.lastReviewed && (
                 <>
                   <span className="mx-2">•</span>
-                  <span>Last: {currentCard.lastReviewed.toLocaleDateString()}</span>
+                  <span>Last: {new Date(currentCard.lastReviewed).toLocaleDateString()}</span>
                 </>
               )}
             </div>

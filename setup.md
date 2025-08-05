@@ -44,8 +44,8 @@
 ## Features Implemented
 
 ✅ **OAuth2.0 with Google** - Users can log in via Google accounts
-✅ **User Profile Display** - Shows user's name/email in top right of demo page
-✅ **Authentication Guard** - Demo page is protected and requires login
+✅ **User Profile Display** - Shows user's name/email in top right of home page
+✅ **Authentication Guard** - Home page is protected and requires login
 ✅ **Unauthorized Page** - Minimalistic page for failed authentication
 ✅ **Profile Dropdown** - Logout functionality to clear OAuth credentials
 ✅ **Database Integration** - User data stored in Prisma with OAuth tables
@@ -53,9 +53,9 @@
 
 ## Authentication Flow
 
-1. User visits `/demo` → Redirected to `/auth/signin` if not authenticated
+1. User visits `/` → Redirected to `/auth/signin` if not authenticated
 2. User clicks "Continue with Google" → Google OAuth flow
-3. Successful authentication → Redirected to `/demo`
+3. Successful authentication → Redirected to `/`
 4. Failed authentication → Redirected to `/auth/error`
 5. User can logout via profile dropdown → Clears session and redirects to home
 
@@ -69,7 +69,7 @@ The Prisma schema includes:
 
 ## Testing
 
-1. Visit `http://localhost:3000/demo`
+1. Visit `http://localhost:3000/`
 2. You should be redirected to the sign-in page
 3. Click "Continue with Google" to authenticate
 4. After successful authentication, you'll see your profile in the top right

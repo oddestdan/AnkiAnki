@@ -19,15 +19,12 @@ import {
 import { useApp } from "@/components/providers/app-provider";
 
 export function ActionsPanel() {
-  const { context, selectedDeck, decks, cards, currentCardIndex } = useApp();
+  const { context, selectedDeck, currentCardIndex } = useApp();
   const [activeTab, setActiveTab] = useState("help");
   const [chatMessage, setChatMessage] = useState("");
   const [chatHistory, setChatHistory] = useState([
     { role: "assistant", message: "Hello! I'm here to help you with your flashcards. How can I assist you today?" }
   ]);
-
-  const selectedDeckData = decks.find(deck => deck.id === selectedDeck);
-  const currentCard = cards[currentCardIndex];
 
   const handleSendMessage = () => {
     if (chatMessage.trim()) {
@@ -152,7 +149,7 @@ export function ActionsPanel() {
 
   const renderPropertiesContent = () => (
     <div className="space-y-4">
-      {context === "deck" && selectedDeckData && (
+      {context === "deck" && selectedDeck && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -163,11 +160,11 @@ export function ActionsPanel() {
           <CardContent className="space-y-3">
             <div>
               <Label htmlFor="deck-name">Name</Label>
-              <Input id="deck-name" defaultValue={selectedDeckData.name} />
+              <Input id="deck-name" placeholder="Deck name" />
             </div>
             <div>
               <Label htmlFor="deck-description">Description</Label>
-              <Input id="deck-description" defaultValue={selectedDeckData.description} />
+              <Input id="deck-description" placeholder="Deck description" />
             </div>
             <div>
               <Label htmlFor="study-interval">Study Interval (days)</Label>
@@ -181,7 +178,7 @@ export function ActionsPanel() {
         </Card>
       )}
 
-      {context === "card" && currentCard && (
+      {context === "card" && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -192,11 +189,11 @@ export function ActionsPanel() {
           <CardContent className="space-y-3">
             <div>
               <Label htmlFor="card-front">Front</Label>
-              <Input id="card-front" defaultValue={currentCard.front} />
+              <Input id="card-front" placeholder="Card front" />
             </div>
             <div>
               <Label htmlFor="card-back">Back</Label>
-              <Input id="card-back" defaultValue={currentCard.back} />
+              <Input id="card-back" placeholder="Card back" />
             </div>
             <div>
               <Label htmlFor="card-tags">Tags</Label>
@@ -204,7 +201,7 @@ export function ActionsPanel() {
             </div>
             <div>
               <Label htmlFor="card-difficulty">Difficulty</Label>
-              <select id="card-difficulty" className="w-full p-2 border rounded" defaultValue={currentCard.difficulty}>
+              <select id="card-difficulty" className="w-full p-2 border rounded" defaultValue="medium">
                 <option value="easy">Easy</option>
                 <option value="medium">Medium</option>
                 <option value="hard">Hard</option>
@@ -250,7 +247,7 @@ export function ActionsPanel() {
             <div>
               <Label htmlFor="study-progress">Study Progress</Label>
               <div className="text-sm text-muted-foreground">
-                {currentCardIndex + 1} of {cards.length} cards completed
+                {currentCardIndex + 1} cards completed
               </div>
             </div>
           </CardContent>

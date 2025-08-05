@@ -13,7 +13,7 @@ export default function SignInPage() {
 
   useEffect(() => {
     if (session) {
-      router.push("/demo")
+      router.push("/")
     }
   }, [session, router])
 
@@ -29,7 +29,7 @@ export default function SignInPage() {
   }
 
   if (session) {
-    return null // Will redirect to demo
+    return null // Will redirect to root page
   }
 
   return (
@@ -46,7 +46,7 @@ export default function SignInPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <Button
-            onClick={() => signIn("google", { callbackUrl: "/demo" })}
+            onClick={() => signIn("google", { callbackUrl: "/" })}
             className="w-full"
             size="lg"
           >

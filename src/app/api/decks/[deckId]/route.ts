@@ -5,8 +5,9 @@ import { prisma } from "@/lib/prisma";
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ deckId: string }> }
 ) {
+  const { deckId } = await params;
   try {
     const session = await getServerSession(authOptions);
     
@@ -34,7 +35,7 @@ export async function PUT(
     // Check if deck exists and belongs to user
     const existingDeck = await prisma.deck.findFirst({
       where: {
-        id: params.id,
+        id: deckId,
         userId: user.id
       }
     });
@@ -44,7 +45,7 @@ export async function PUT(
     }
 
     const updatedDeck = await prisma.deck.update({
-      where: { id: params.id },
+      where: { id: deckId },
       data: {
         name: name.trim(),
         description: description?.trim() || null
@@ -63,8 +64,9 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ deckId: string }> }
 ) {
+  const { deckId } = await params;
   try {
     const session = await getServerSession(authOptions);
     
@@ -83,7 +85,7 @@ export async function DELETE(
     // Check if deck exists and belongs to user
     const existingDeck = await prisma.deck.findFirst({
       where: {
-        id: params.id,
+        id: deckId,
         userId: user.id
       }
     });
@@ -94,7 +96,7 @@ export async function DELETE(
 
     // Delete the deck (cards will be deleted automatically due to cascade)
     await prisma.deck.delete({
-      where: { id: params.id }
+      where: { id: deckId }
     });
 
     return NextResponse.json({ success: true });

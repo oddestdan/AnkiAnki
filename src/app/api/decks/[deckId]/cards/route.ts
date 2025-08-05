@@ -5,8 +5,9 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ deckId: string }> }
 ) {
+  const { deckId } = await params;
   try {
     const session = await getServerSession(authOptions);
     
@@ -25,7 +26,7 @@ export async function GET(
     // Check if deck exists and belongs to user
     const deck = await prisma.deck.findFirst({
       where: {
-        id: params.id,
+        id: deckId,
         userId: user.id
       },
       include: {
@@ -51,8 +52,9 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ deckId: string }> }
 ) {
+  const { deckId } = await params;
   try {
     const session = await getServerSession(authOptions);
     
@@ -87,7 +89,7 @@ export async function POST(
     // Check if deck exists and belongs to user
     const deck = await prisma.deck.findFirst({
       where: {
-        id: params.id,
+        id: deckId,
         userId: user.id
       }
     });
@@ -101,13 +103,13 @@ export async function POST(
         front: front.trim(),
         back: back.trim(),
         difficulty: difficulty as "easy" | "medium" | "hard",
-        deckId: params.id
+        deckId: deckId
       }
     });
 
     // Update deck's card count
     await prisma.deck.update({
-      where: { id: params.id },
+        where: { id: deckId },
       data: {
         cardCount: {
           increment: 1

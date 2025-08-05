@@ -5,8 +5,9 @@ import { prisma } from "@/lib/prisma";
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { deckId: string; cardId: string } }
+  { params }: { params: Promise<{ deckId: string; cardId: string }> }
 ) {
+  const { deckId, cardId } = await params;
   try {
     const session = await getServerSession(authOptions);
     
@@ -41,9 +42,9 @@ export async function PUT(
     // Check if card exists and belongs to user's deck
     const existingCard = await prisma.flashCard.findFirst({
       where: {
-        id: params.cardId,
+        id: cardId,
         deck: {
-          id: params.deckId,
+          id: deckId,
           userId: user.id
         }
       }
@@ -54,7 +55,7 @@ export async function PUT(
     }
 
     const updatedCard = await prisma.flashCard.update({
-      where: { id: params.cardId },
+      where: { id: cardId },
       data: {
         front: front.trim(),
         back: back.trim(),
@@ -74,8 +75,9 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { deckId: string; cardId: string } }
+  { params }: { params: Promise<{ deckId: string; cardId: string }> }
 ) {
+  const { deckId, cardId } = await params;
   try {
     const session = await getServerSession(authOptions);
     
@@ -94,9 +96,9 @@ export async function DELETE(
     // Check if card exists and belongs to user's deck
     const existingCard = await prisma.flashCard.findFirst({
       where: {
-        id: params.cardId,
+        id: cardId,
         deck: {
-          id: params.deckId,
+          id: deckId,
           userId: user.id
         }
       }
@@ -108,12 +110,12 @@ export async function DELETE(
 
     // Delete the card
     await prisma.flashCard.delete({
-      where: { id: params.cardId }
+      where: { id: cardId }
     });
 
     // Update deck's card count
     await prisma.deck.update({
-      where: { id: params.deckId },
+      where: { id: deckId },
       data: {
         cardCount: {
           decrement: 1
